@@ -2935,6 +2935,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
     uint32_t code;
     Parcel const* data;
     Parcel* reply;
+    Mutex mLock;
 
     enum {
         MSG_API_CALL,
@@ -2946,7 +2947,8 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
      * data and reply Parcel and forward them to the calling thread.
      */
     virtual status_t transact(uint32_t code,
-            const Parcel& data, Parcel* reply, uint32_t) {
+            const Parcel& data, Parcel* reply, uint32_t) {      
+        mLock.lock();
         this->code = code;
         this->data = &data;
         this->reply = reply;
@@ -2959,6 +2961,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
             looper->sendMessage(this, Message(MSG_API_CALL));
             barrier.wait();
         }
+        mLock.unlock();
         return NO_ERROR;
     }
 
